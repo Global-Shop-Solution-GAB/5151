@@ -1,0 +1,52 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Author: Bix
+'Date: 6/27/2018
+'Customer: Milford Fabricating Co., Inc.
+'GCG_5151_ItemMaster_LaunchMenuItem.g2u
+'Checks custom to table to see if an entry for the user's terminal number is available and populate Item master screen with part, rev and loc. Used in conjunction with customized 4180 dashboard from same project
+
+F.Intrinsic.Control.If(V.Caller.Hook,=,15410)
+	F.Intrinsic.Control.CallSub(PopulateScreen)
+F.Intrinsic.Control.EndIf
+
+V.Local.sError.Declare(String)
+F.Intrinsic.Control.Try
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.PopulateScreen.Start
+'Get Part and Loc from DB
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+F.Intrinsic.Control.Try
+
+F.Intrinsic.String.Build("select PART, LOCATION from GCG_5151_ITMSTR where TERMINAL = '{0}';",V.Caller.Terminal,V.Local.sSQL)
+F.ODBC.Connection!con.OpenCompanyConnection
+F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.If(V.Local.sRet,!=,"")
+	'Check to see if return is blank (no entries)
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+	F.Intrinsic.String.RPad(V.Local.sRet(0)," ",20,V.Local.sRet(0))
+	'Part
+	F.Intrinsic.String.Left(V.Local.sRet(0),17,V.Passed.000001)
+	'Rev
+	F.Intrinsic.String.Right(V.Local.sRet(0),3,V.Passed.000012)
+	'Loc
+	V.Passed.000003.Set(V.Local.sRet(1))
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.PopulateScreen.End
